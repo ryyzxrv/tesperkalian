@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tes Perkalian 5B - Tut Wuri Handayani</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            light: '#4f46e5', // Indigo 600
+                            dark: '#6366f1',  // Indigo 500
+                        },
+                        danger: '#ef4444',
+                        success: '#22c55e'
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 0.8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'shake': 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both'
+                    },
+                    keyframes: {
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Styles */
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark .glass {
+            background: rgba(30, 41, 59, 0.7); /* Slate 800 */
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Red Tension Effect */
+        .tension-mode {
+            box-shadow: inset 0 0 50px rgba(239, 68, 68, 0.5);
+            border: 2px solid #ef4444;
+            animation: pulse-red 1s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.2); }
+            50% { box-shadow: inset 0 0 60px rgba(239, 68, 68, 0.6); }
+            100% { box-shadow: inset 0 0 20px rgba(239, 68, 68, 0.2); }
+        }
+
+        /* Input Number Arrows Remove */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 min-h-screen text-slate-800 dark:text-white font-sans selection:bg-brand-light selection:text-white">
+
+    <nav class="fixed top-0 w-full z-50 glass shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b3/Logo_Tut_Wuri_Handayani.svg" alt="Logo Pendidikan" class="h-10 w-10 drop-shadow-md">
+                    <div>
+                        <h1 class="font-bold text-xl tracking-tight text-brand-light dark:text-brand-dark">Matematika 5B</h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">SD Nusantara 01</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleTheme()" class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                        <i class="fas fa-moon dark:hidden text-slate-600"></i>
+                        <i class="fas fa-sun hidden dark:block text-yellow-400"></i>
+                    </button>
+                    <button onclick="logout()" id="btn-logout" class="hidden text-sm font-medium text-red-500 hover:text-red-700">
+                        Keluar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pt-24 pb-10 px-4 flex flex-col items-center justify-center min-h-screen" id="app-container">
+        
+        <div id="toast" class="fixed top-20 right-5 z-[60] transform translate-x-full transition-transform duration-300">
+            <div class="glass px-6 py-4 rounded-lg shadow-lg border-l-4 border-brand-light flex items-center gap-3">
+                <i class="fas fa-info-circle text-brand-light"></i>
+                <span id="toast-msg" class="font-medium">Notification</span>
+            </div>
+        </div>
+
+        <div id="view-login" class="w-full max-w-md transition-all duration-500">
+            <div class="glass rounded-2xl shadow-xl overflow-hidden p-8">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold mb-2">Selamat Datang!</h2>
+                    <p class="text-slate-500 dark:text-slate-400">Silakan masuk untuk memulai tes perkalian.</p>
+                </div>
+
+                <div class="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1 mb-6">
+                    <button onclick="switchLoginTab('student')" id="tab-student" class="flex-1 py-2 text-sm font-medium rounded-md shadow bg-white dark:bg-slate-600 text-brand-light dark:text-white transition-all">
+                        <i class="fas fa-user-graduate mr-2"></i>Murid
+                    </button>
+                    <button onclick="switchLoginTab('teacher')" id="tab-teacher" class="flex-1 py-2 text-sm font-medium rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-all">
+                        <i class="fas fa-chalkboard-teacher mr-2"></i>Guru
+                    </button>
+                </div>
+
+                <div id="form-student">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Username</label>
+                            <input type="text" id="std-user" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-light outline-none transition" placeholder="Contoh: budi01">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Password</label>
+                            <input type="password" id="std-pass" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-light outline-none transition" placeholder="••••••">
+                        </div>
+                        <button onclick="loginStudent()" class="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-lg shadow-lg transform hover:-translate-y-0.5 transition duration-200">
+                            Mulai Tes
+                        </button>
+                    </div>
+                </div>
+
+                <div id="form-teacher" class="hidden">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Username Guru</label>
+                            <input type="text" id="tea-user" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-light outline-none transition" placeholder="PakTanjung">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Password</label>
+                            <input type="password" id="tea-pass" class="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-brand-light outline-none transition" placeholder="••••••">
+                        </div>
+                        <button onclick="loginTeacher()" class="w-full py-3 bg-slate-800 dark:bg-slate-600 hover:bg-slate-900 text-white font-bold rounded-lg shadow-lg transform hover:-translate-y-0.5 transition duration-200">
+                            Masuk Panel Guru
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-dashboard" class="hidden w-full max-w-4xl animate-fade-in-up">
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold mb-2">Pilih Tantanganmu, <span id="display-name" class="text-brand-light"></span>!</h2>
+                <p class="text-slate-600 dark:text-slate-300">Selesaikan tes perkalian ini dengan cepat dan tepat.</p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4" id="level-grid">
+                </div>
+        </div>
+
+        <div id="view-game" class="hidden w-full max-w-2xl transition-all">
+            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 mb-6">
+                <div id="game-progress" class="bg-brand-light h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+
+            <div id="game-card" class="glass rounded-3xl shadow-2xl p-8 md:p-12 text-center relative overflow-hidden transition-all duration-300">
+                <div class="absolute top-4 right-4">
+                    <div id="timer-badge" class="flex items-center justify-center w-16 h-16 rounded-full border-4 border-slate-100 dark:border-slate-600 text-xl font-bold bg-white dark:bg-slate-800 shadow-md transition-colors duration-300">
+                        15
+                    </div>
+                </div>
+
+                <div class="mb-2 text-slate-400 font-medium tracking-widest uppercase text-sm">Soal <span id="q-current">1</span> / 10</div>
+                
+                <div class="py-10">
+                    <h1 id="question-text" class="text-6xl md:text-7xl font-extrabold text-slate-800 dark:text-white tracking-tight">
+                        7 x 8
+                    </h1>
+                </div>
+
+                <div class="max-w-xs mx-auto relative">
+                    <input type="number" id="answer-input" class="w-full text-center text-3xl font-bold py-4 rounded-xl border-2 border-slate-200 dark:border-slate-600 bg-white/50 dark:bg-slate-900/50 focus:border-brand-light focus:ring-4 focus:ring-brand-light/20 outline-none transition" placeholder="?" autocomplete="off">
+                    <div id="feedback-msg" class="absolute -bottom-8 left-0 right-0 text-sm font-bold h-6"></div>
+                </div>
+
+                <div class="mt-8">
+                    <p class="text-xs text-slate-400">Tekan <kbd class="px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded text-slate-600 dark:text-slate-300 font-mono">Enter</kbd> untuk menjawab</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-admin" class="hidden w-full max-w-6xl">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="glass rounded-xl p-6 shadow-lg">
+                        <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                            <i class="fas fa-file-excel text-green-600"></i> Data Murid
+                        </h3>
+                        <p class="text-sm text-slate-500 mb-4">Upload file .xlsx berisi data murid (Nama, Username, Password).</p>
+                        
+                        <div class="flex flex-col gap-3">
+                            <button onclick="downloadTemplate()" class="flex items-center justify-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-sm font-medium transition">
+                                <i class="fas fa-download"></i> Download Template
+                            </button>
+                            
+                            <label class="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg cursor-pointer text-sm font-medium transition shadow-md">
+                                <i class="fas fa-upload"></i> Upload Data Murid
+                                <input type="file" id="excel-upload" class="hidden" accept=".xlsx" onchange="handleFileUpload(this)">
+                            </label>
+                        </div>
+                        <div id="upload-status" class="mt-2 text-xs text-center text-slate-500"></div>
+                    </div>
+
+                    <div class="glass rounded-xl p-6 shadow-lg border-l-4 border-red-500">
+                        <h3 class="font-bold text-lg mb-2 text-red-600">Zona Bahaya</h3>
+                        <p class="text-sm text-slate-500 mb-4">Hapus semua data murid dan hasil nilai.</p>
+                        <button onclick="resetSystem()" class="w-full px-4 py-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-lg text-sm font-bold transition">
+                            <i class="fas fa-trash-alt mr-2"></i> Reset Sistem
+                        </button>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2">
+                    <div class="glass rounded-xl p-6 shadow-lg min-h-[500px]">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-xl">Analisis Hasil Belajar</h3>
+                            <div class="text-sm text-slate-500 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-full">
+                                Total Data: <span id="total-records">0</span>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-600">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 uppercase text-xs font-bold">
+                                    <tr>
+                                        <th class="px-6 py-3">Nama Siswa</th>
+                                        <th class="px-6 py-3">Perkalian</th>
+                                        <th class="px-6 py-3 text-center">Nilai</th>
+                                        <th class="px-6 py-3 text-center">Status</th>
+                                        <th class="px-6 py-3 text-right">Waktu</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body" class="divide-y divide-slate-200 dark:divide-slate-600">
+                                    </tbody>
+                            </table>
+                        </div>
+                        <div id="empty-state" class="hidden py-10 text-center text-slate-400">
+                            <i class="fas fa-inbox text-4xl mb-3"></i>
+                            <p>Belum ada data hasil tes.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- CONFIG & STATE ---
+        const ADMIN_USER = "Pak Tanjung";
+        const ADMIN_PASS = "guru";
+        const DB_STUDENTS = "math_5b_students";
+        const DB_RESULTS = "math_5b_results";
+
+        let currentUser = null;
+        let currentLevel = 0;
+        let questions = [];
+        let qIndex = 0;
+        let score = 0;
+        let correctCount = 0;
+        let timerInterval;
+        let timeLeft = 15;
+        let isGameRunning = false;
+
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme();
+            renderLevelButtons();
+            
+            // Enter key handler for game
+            document.getElementById('answer-input').addEventListener('keydown', (e) => {
+                if(e.key === 'Enter' && isGameRunning) submitAnswer();
+            });
+
+            // Initialize default students if empty for demo
+            if(!localStorage.getItem(DB_STUDENTS)) {
+                // Default dummy data so it's not empty immediately
+                const defaults = [
+                    { name: "Siswa Contoh", user: "siswa", pass: "123" }
+                ];
+                localStorage.setItem(DB_STUDENTS, JSON.stringify(defaults));
+            }
+        });
+
+        // --- AUTH & NAVIGATION ---
+        function switchLoginTab(role) {
+            const btnStd = document.getElementById('tab-student');
+            const btnTea = document.getElementById('tab-teacher');
+            const formStd = document.getElementById('form-student');
+            const formTea = document.getElementById('form-teacher');
+
+            if(role === 'student') {
+                btnStd.className = "flex-1 py-2 text-sm font-medium rounded-md shadow bg-white dark:bg-slate-600 text-brand-light dark:text-white transition-all";
+                btnTea.className = "flex-1 py-2 text-sm font-medium rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-all";
+                formStd.classList.remove('hidden');
+                formTea.classList.add('hidden');
+            } else {
+                btnTea.className = "flex-1 py-2 text-sm font-medium rounded-md shadow bg-white dark:bg-slate-600 text-brand-light dark:text-white transition-all";
+                btnStd.className = "flex-1 py-2 text-sm font-medium rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-all";
+                formTea.classList.remove('hidden');
+                formStd.classList.add('hidden');
+            }
+        }
+
+        function loginTeacher() {
+            const u = document.getElementById('tea-user').value;
+            const p = document.getElementById('tea-pass').value;
+            if(u === ADMIN_USER && p === ADMIN_PASS) {
+                currentUser = { name: "Pak Tanjung", role: "admin" };
+                showToast("Berhasil login sebagai Guru", "success");
+                showView('view-admin');
+                loadAdminData();
+                document.getElementById('btn-logout').classList.remove('hidden');
+            } else {
+                showToast("Username atau Password salah", "error");
+                shakeElement(document.getElementById('view-login'));
+            }
+        }
+
+        function loginStudent() {
+            const u = document.getElementById('std-user').value;
+            const p = document.getElementById('std-pass').value;
+            const students = JSON.parse(localStorage.getItem(DB_STUDENTS) || "[]");
+            const found = students.find(s => s.user === u && s.pass == p); // soft equality for number/string pass
+
+            if(found) {
+                currentUser = { ...found, role: "student" };
+                document.getElementById('display-name').innerText = found.name;
+                showView('view-dashboard');
+                document.getElementById('btn-logout').classList.remove('hidden');
+            } else {
+                showToast("Akun tidak ditemukan. Hubungi Pak Tanjung.", "error");
+                shakeElement(document.getElementById('view-login'));
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            isGameRunning = false;
+            clearInterval(timerInterval);
+            document.getElementById('std-user').value = '';
+            document.getElementById('std-pass').value = '';
+            document.getElementById('btn-logout').classList.add('hidden');
+            showView('view-login');
+        }
+
+        function showView(viewId) {
+            ['view-login', 'view-dashboard', 'view-game', 'view-admin'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        // --- EXCEL LOGIC (SHEETJS) ---
+        function downloadTemplate() {
+            const ws = XLSX.utils.json_to_sheet([
+                { "Nama Lengkap": "Budi Santoso", "Username": "budi01", "Password": "123" },
+                { "Nama Lengkap": "Siti Aminah", "Username": "siti02", "Password": "456" }
+            ]);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data Murid");
+            XLSX.writeFile(wb, "Template_Akun_Murid.xlsx");
+        }
+
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const json = XLSX.utils.sheet_to_json(worksheet);
+
+                // Process Data
+                const newStudents = json.map(row => ({
+                    name: row["Nama Lengkap"] || row["Nama"],
+                    user: row["Username"] || row["User"],
+                    pass: row["Password"] || row["Pass"]
+                })).filter(s => s.name && s.user && s.pass);
+
+                if(newStudents.length > 0) {
+                    const currentDB = JSON.parse(localStorage.getItem(DB_STUDENTS) || "[]");
+                    // Avoid duplicates by username
+                    const merged = [...currentDB];
+                    newStudents.forEach(ns => {
+                        if(!merged.find(existing => existing.user === ns.user)) {
+                            merged.push(ns);
+                        }
+                    });
+                    
+                    localStorage.setItem(DB_STUDENTS, JSON.stringify(merged));
+                    showToast(`${newStudents.length} Data murid berhasil diimpor!`, "success");
+                    document.getElementById('upload-status').innerText = "Upload berhasil terakhir: " + new Date().toLocaleTimeString();
+                } else {
+                    showToast("Format Excel tidak sesuai template.", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // --- GAME LOGIC ---
+        function renderLevelButtons() {
+            const grid = document.getElementById('level-grid');
+            grid.innerHTML = '';
+            for(let i=1; i<=10; i++) {
+                const btn = document.createElement('button');
+                btn.className = `glass p-4 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-brand-light hover:text-white dark:hover:bg-brand-dark transition-all duration-300 group transform hover:-translate-y-1 shadow-md`;
+                btn.innerHTML = `
+                    <span class="text-xs font-bold opacity-60">LEVEL</span>
+                    <span class="text-3xl font-black">x${i}</span>
+                `;
+                btn.onclick = () => startGame(i);
+                grid.appendChild(btn);
+            }
+        }
+
+        function startGame(level) {
+            currentLevel = level;
+            questions = generateQuestions(level);
+            qIndex = 0;
+            score = 0;
+            correctCount = 0;
+            isGameRunning = true;
+            
+            showView('view-game');
+            loadNextQuestion();
+        }
+
+        function generateQuestions(level) {
+            let q = [];
+            for(let i=0; i<10; i++) {
+                // Random multiplier 1-10
+                const m = Math.floor(Math.random() * 10) + 1;
+                // 50% chance to flip (Example: 5x3 or 3x5) for variety
+                const flip = Math.random() > 0.5;
+                q.push({
+                    text: flip ? `${level} x ${m}` : `${m} x ${level}`,
+                    ans: level * m
+                });
+            }
+            return q;
+        }
+
+        function loadNextQuestion() {
+            if(qIndex >= 10) {
+                endGame();
+                return;
+            }
+
+            const q = questions[qIndex];
+            document.getElementById('question-text').innerText = q.text;
+            document.getElementById('q-current').innerText = qIndex + 1;
+            
+            const input = document.getElementById('answer-input');
+            input.value = '';
+            input.focus();
+            document.getElementById('game-progress').style.width = `${(qIndex/10)*100}%`;
+            document.getElementById('feedback-msg').innerText = '';
+
+            // Reset Styles
+            const card = document.getElementById('game-card');
+            card.classList.remove('tension-mode', 'border-red-500');
+
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 15; // Set 15 seconds
+            updateTimerUI();
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerUI();
+
+                // Tension logic
+                if(timeLeft <= 9 && timeLeft > 0) {
+                    document.getElementById('game-card').classList.add('tension-mode');
+                    document.getElementById('timer-badge').classList.add('bg-red-500', 'text-white', 'border-red-600');
+                    document.getElementById('timer-badge').classList.remove('bg-white', 'dark:bg-slate-800');
+                }
+
+                if(timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleAnswer(false, true); // Wrong by timeout
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            const badge = document.getElementById('timer-badge');
+            badge.innerText = timeLeft;
+            if(timeLeft > 9) {
+                document.getElementById('game-card').classList.remove('tension-mode');
+                badge.classList.remove('bg-red-500', 'text-white', 'border-red-600');
+                badge.classList.add('bg-white', 'dark:bg-slate-800');
+            }
+        }
+
+        function submitAnswer() {
+            if(!isGameRunning) return;
+            clearInterval(timerInterval);
+            
+            const val = parseInt(document.getElementById('answer-input').value);
+            const correctVal = questions[qIndex].ans;
+            
+            if(val === correctVal) {
+                handleAnswer(true);
+            } else {
+                handleAnswer(false);
+            }
+        }
+
+        function handleAnswer(isCorrect, isTimeout=false) {
+            const feedback = document.getElementById('feedback-msg');
+            
+            if(isCorrect) {
+                score += 10;
+                correctCount++;
+                feedback.innerHTML = '<span class="text-green-500">Benar! 👍</span>';
+                confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 } });
+            } else {
+                feedback.innerHTML = isTimeout 
+                    ? '<span class="text-red-500">Waktu Habis! ⏰</span>' 
+                    : `<span class="text-red-500">Salah, jawabannya ${questions[qIndex].ans}</span>`;
+                shakeElement(document.getElementById('game-card'));
+            }
+
+            qIndex++;
+            setTimeout(() => {
+                loadNextQuestion();
+            }, 1500); // 1.5s delay to see result
+        }
+
+        function endGame() {
+            isGameRunning = false;
+            clearInterval(timerInterval);
+            
+            // Save Data
+            const history = JSON.parse(localStorage.getItem(DB_RESULTS) || "[]");
+            history.push({
+                student: currentUser.name,
+                level: currentLevel,
+                score: score,
+                correct: correctCount,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem(DB_RESULTS, JSON.stringify(history));
+
+            // Full Screen Confetti
+            if(score >= 80) {
+                var duration = 3 * 1000;
+                var animationEnd = Date.now() + duration;
+                var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+                var random = function(min, max) { return Math.random() * (max - min) + min; }
+
+                var interval = setInterval(function() {
+                    var timeLeft = animationEnd - Date.now();
+                    if (timeLeft <= 0) return clearInterval(interval);
+                    var particleCount = 50 * (timeLeft / duration);
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.1, 0.3), y: Math.random() - 0.2 } }));
+                    confetti(Object.assign({}, defaults, { particleCount, origin: { x: random(0.7, 0.9), y: Math.random() - 0.2 } }));
+                }, 250);
+            }
+
+            alert(`Tes Selesai!\nNilai Kamu: ${score}\nBenar: ${correctCount} dari 10`);
+            showView('view-dashboard');
+        }
+
+
+        // --- ADMIN FUNCTIONS ---
+        function loadAdminData() {
+            const data = JSON.parse(localStorage.getItem(DB_RESULTS) || "[]");
+            const tbody = document.getElementById('table-body');
+            const emptyState = document.getElementById('empty-state');
+            
+            document.getElementById('total-records').innerText = data.length;
+            tbody.innerHTML = '';
+
+            if(data.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            // Sort newest first
+            data.reverse().forEach(row => {
+                const dateObj = new Date(row.timestamp);
+                const dateStr = dateObj.toLocaleDateString('id-ID', { day:'numeric', month:'short' });
+                const timeStr = dateObj.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+
+                const badgeClass = row.score >= 80 ? 'bg-green-100 text-green-800' : (row.score >= 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800');
+                const statusText = row.score >= 70 ? 'Lulus' : 'Remedial';
+
+                const tr = `
+                    <tr class="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-750 transition">
+                        <td class="px-6 py-4 font-medium whitespace-nowrap">${row.student}</td>
+                        <td class="px-6 py-4 text-slate-500">Perkalian x${row.level}</td>
+                        <td class="px-6 py-4 text-center font-bold text-lg">${row.score}</td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="${badgeClass} px-2.5 py-0.5 rounded text-xs font-semibold border border-opacity-20">${statusText}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right text-xs text-slate-400">
+                            ${dateStr}<br>${timeStr}
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += tr;
+            });
+        }
+
+        function resetSystem() {
+            if(confirm("PERINGATAN KERAS!\nIni akan menghapus SEMUA data murid dan riwayat nilai.\n\nKetik 'hapus' untuk melanjutkan.")) {
+                const check = prompt("Ketik 'hapus' untuk konfirmasi:");
+                if(check === 'hapus') {
+                    localStorage.clear();
+                    alert('Sistem berhasil direset.');
+                    location.reload();
+                }
+            }
+        }
+
+        // --- UTILS ---
+        function showToast(msg, type='info') {
+            const toast = document.getElementById('toast');
+            const msgSpan = document.getElementById('toast-msg');
+            msgSpan.innerText = msg;
+            
+            const icon = toast.querySelector('i');
+            toast.className = `fixed top-24 right-5 z-[60] transform transition-transform duration-300 translate-x-0`;
+            
+            if(type === 'success') {
+                icon.className = 'fas fa-check-circle text-green-500 text-xl';
+                toast.querySelector('.glass').className = 'glass px-6 py-4 rounded-lg shadow-lg border-l-4 border-green-500 flex items-center gap-3 bg-white dark:bg-slate-800';
+            } else if(type === 'error') {
+                icon.className = 'fas fa-exclamation-circle text-red-500 text-xl';
+                toast.querySelector('.glass').className = 'glass px-6 py-4 rounded-lg shadow-lg border-l-4 border-red-500 flex items-center gap-3 bg-white dark:bg-slate-800';
+            } else {
+                icon.className = 'fas fa-info-circle text-blue-500 text-xl';
+                toast.querySelector('.glass').className = 'glass px-6 py-4 rounded-lg shadow-lg border-l-4 border-blue-500 flex items-center gap-3 bg-white dark:bg-slate-800';
+            }
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                toast.classList.remove('translate-x-0');
+            }, 3000);
+        }
+
+        function shakeElement(el) {
+            el.classList.add('animate-shake');
+            setTimeout(() => el.classList.remove('animate-shake'), 500);
+        }
+
+        function toggleTheme() {
+            const html = document.querySelector('html');
+            if(html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        function loadTheme() {
+            if(localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.querySelector('html').classList.add('dark');
+            } else {
+                document.querySelector('html').classList.remove('dark');
+            }
+        }
+    </script>
+</body>
+</html>
